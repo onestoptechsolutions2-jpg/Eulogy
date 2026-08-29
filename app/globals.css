@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ground: #efece3;
+  --surface: #f8f6ef;
+  --surface-sunk: #e5e1d5;
+  --ink: #221a13;
+  --ink-soft: #6c6151;
+  --rule: #d3ccbd;
+  --earth: #a63c22;
+  --earth-ink: #8a3119;
+  --indigo: #2c3a64;
+  --indigo-soft: #5a6389;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ground: #16110d;
+    --surface: #1f1913;
+    --surface-sunk: #120e0a;
+    --ink: #ebe2d2;
+    --ink-soft: #a6987f;
+    --rule: #392f24;
+    --earth: #da6c4c;
+    --earth-ink: #e8825f;
+    --indigo: #95a3ce;
+    --indigo-soft: #717eaa;
+  }
+}
+
+@layer base {
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-serif), Georgia, serif;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  a {
+    color: var(--indigo);
+    text-underline-offset: 2px;
+  }
+  ::selection {
+    background: color-mix(in srgb, var(--earth) 22%, transparent);
+  }
+}
+
+@layer components {
+  .label {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+  }
+  .btn {
+    font-family: var(--font-mono), ui-monospace, monospace;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    padding: 0.55rem 1.05rem;
+    border-radius: 6px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--ground);
+    cursor: pointer;
+    display: inline-block;
+  }
+  .btn.ghost {
+    background: transparent;
+    color: var(--ink);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .field {
+    width: 100%;
+    font: inherit;
+    padding: 0.55rem 0.7rem;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  .field:focus-visible,
+  .btn:focus-visible,
+  a:focus-visible {
+    outline: 2px solid var(--indigo);
+    outline-offset: 2px;
+  }
+}

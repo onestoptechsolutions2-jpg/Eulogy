@@ -1,0 +1,28 @@
+{
+  "name": "in-memory-standalone",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A memorial site with a real genealogy tree, seeded from a Gramps export. Vercel + Neon Postgres, no external APIs.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "import:gramps": "node scripts/import-gramps.js"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "@vercel/blob": "^2.8.0",
+    "compression": "^1.7.5",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "fast-xml-parser": "^5.11.1",
+    "helmet": "^8.0.0",
+    "iron-session": "^8.0.4",
+    "multer": "^2.0.0",
+    "sharp": "^0.35.4"
+  }
+}

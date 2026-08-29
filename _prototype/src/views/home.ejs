@@ -1,0 +1,113 @@
+<%- include("partials/head", { title: `${site.name} — In Memory`, description: site.life_story.slice(0, 160), ogImage: site.hero_photo }) %>
+
+<section class="hero">
+  <% if (site.hero_photo) { %><img src="<%= site.hero_photo %>" alt="<%= site.name %>"><% } %>
+  <h1><%= site.name %></h1>
+  <div class="dates"><%= site.birth_date %> — <%= site.death_date %></div>
+</section>
+
+<section class="life-story">
+  <div class="eyebrow">Their story</div>
+  <% site.life_story.split(/\n\n+/).forEach(function(p) { %>
+    <p><%= p %></p>
+  <% }) %>
+</section>
+
+<section>
+  <div class="eyebrow">In their words</div>
+  <% if (voices.length) { %>
+    <div class="voices">
+      <% voices.forEach(function(v) { %>
+        <div class="voice">
+          <blockquote>&ldquo;<%= v.quote %>&rdquo;</blockquote>
+          <cite><%= v.attribution %></cite>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <p style="color:var(--sage)">No featured memories yet.</p>
+  <% } %>
+</section>
+
+<% if (gallery.length) { %>
+<section>
+  <div class="eyebrow">Photographs</div>
+  <div class="gallery">
+    <% gallery.forEach(function(p) { %>
+      <figure>
+        <img src="<%= p.src %>" alt="<%= p.caption || '' %>" loading="lazy">
+        <% if (p.caption) { %><figcaption><%= p.caption %></figcaption><% } %>
+      </figure>
+    <% }) %>
+  </div>
+</section>
+<% } %>
+
+<section>
+  <div class="eyebrow">Family</div>
+  <% if (subject && relatives) { %>
+    <p class="family-lead">
+      <strong><%= fullName(subject) %></strong><% if (lifespan(subject)) { %> · <span class="dates"><%= lifespan(subject) %></span><% } %>
+      in the family tree:
+    </p>
+    <div class="kin">
+      <% [["Parents", relatives.parents], ["Brothers &amp; sisters", relatives.siblings], ["Partner", relatives.partners], ["Children", relatives.children]].forEach(function(pair){ %>
+        <% if (pair[1] && pair[1].length) { %>
+          <div class="kin-group">
+            <h3><%- pair[0] %></h3>
+            <ul>
+              <% pair[1].forEach(function(r){ %>
+                <li><a href="/person/<%= r.handle %>"><%= shortName(r) %></a><% if (lifespan(r)) { %> <span class="dates">(<%= lifespan(r) %>)</span><% } %></li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
+      <% }) %>
+    </div>
+    <p class="share-link"><a href="/tree">→ See the whole family tree (<%= peopleCount %> people)</a></p>
+  <% } else if (peopleCount) { %>
+    <p>The family tree has <%= peopleCount %> people.</p>
+    <p class="share-link"><a href="/tree">→ Open the family tree</a></p>
+  <% } else { %>
+    <p style="color:var(--sage)">The family tree hasn't been loaded yet.</p>
+  <% } %>
+</section>
+
+<section class="practical">
+  <div class="eyebrow">Service details</div>
+  <p><%= site.service_details %></p>
+  <% if (site.donation_link) { %>
+    <p><a href="<%= site.donation_link %>"><%= site.donation_label %></a></p>
+  <% } %>
+</section>
+
+<section class="share-link">
+  <a href="/share">→ Share a memory of <%= site.name %></a>
+</section>
+
+<section>
+  <div class="eyebrow">Guestbook</div>
+  <p>Leave a memory or a message for the family.</p>
+  <form id="gb-form">
+    <label for="gb-name">Your name</label>
+    <input id="gb-name" required>
+    <label for="gb-message">Message</label>
+    <textarea id="gb-message" required></textarea>
+    <div style="margin-top:1rem;"><button type="submit" id="gb-submit">Leave a message</button></div>
+    <p id="gb-status" style="display:none;" class="success"></p>
+  </form>
+  <div id="gb-list" style="margin-top:2rem;">
+    <% guestbook.forEach(function(g) { %>
+      <div class="guestbook-entry">
+        <div class="meta"><%= g.name %></div>
+        <div><%= g.message %></div>
+      </div>
+    <% }) %>
+  </div>
+</section>
+
+<footer>In loving memory</footer>
+
+<script src="/js/home.js"></script>
+</body>
+</html>

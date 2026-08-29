@@ -1,0 +1,48 @@
+<%- include("partials/head", { title: `${site.name} — Family tree` }) %>
+
+<section class="hero" style="padding-top:3.5rem;padding-bottom:1.5rem;">
+  <h1 style="font-size:1.75rem;">Family tree</h1>
+  <div class="dates"><%= peopleCount %> people · <%= units.length %> family units</div>
+</section>
+
+<section>
+  <p><a href="/">← Back to <%= site.name %></a></p>
+
+  <% if (!peopleCount) { %>
+    <p style="color:var(--sage)">Nothing loaded yet.</p>
+  <% } else { %>
+
+    <% if (roots.length) { %>
+      <div class="eyebrow">Earliest known</div>
+      <ul class="root-list">
+        <% roots.forEach(function(r){ %>
+          <li><a href="/person/<%= r.handle %>"><%= fullName(r) %></a><% if (lifespan(r)) { %> <span class="dates">(<%= lifespan(r) %>)</span><% } %></li>
+        <% }) %>
+      </ul>
+    <% } %>
+
+    <div class="eyebrow" style="margin-top:2.5rem;">Family units</div>
+    <div class="units">
+      <% units.forEach(function(u){ %>
+        <div class="unit">
+          <div class="unit-parents">
+            <% if (u.father) { %><a href="/person/<%= u.father.handle %>"><%= fullName(u.father) %></a><% } else { %><span class="unknown">unknown</span><% } %>
+            <span class="amp">&amp;</span>
+            <% if (u.mother) { %><a href="/person/<%= u.mother.handle %>"><%= fullName(u.mother) %></a><% } else { %><span class="unknown">unknown</span><% } %>
+            <% if (u.rel_type && u.rel_type !== "Unknown") { %><span class="rel"><%= u.rel_type.toLowerCase() %></span><% } %>
+          </div>
+          <% if (u.children.length) { %>
+            <ul class="unit-children">
+              <% u.children.forEach(function(c){ %>
+                <li><a href="/person/<%= c.handle %>"><%= shortName(c) %></a><% if (lifespan(c)) { %> <span class="dates">(<%= lifespan(c) %>)</span><% } %></li>
+              <% }) %>
+            </ul>
+          <% } %>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+</section>
+
+</body>
+</html>

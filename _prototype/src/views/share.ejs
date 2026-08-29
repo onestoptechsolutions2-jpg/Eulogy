@@ -1,0 +1,55 @@
+<%- include("partials/head", { title: `Share a memory — ${siteName}` }) %>
+
+<section class="hero" style="padding-top:3.5rem;padding-bottom:1.5rem;">
+  <h1 style="font-size:1.75rem;">Share a memory</h1>
+  <div class="dates">Your words help shape the eulogy and the family tree</div>
+</section>
+
+<section class="wizard">
+  <form id="wizard-form">
+    <div class="step active" data-step="0">
+      <label for="name">Your name</label>
+      <input id="name" required>
+      <label for="relationship">Your relationship to her</label>
+      <select id="relationship" required>
+        <option value="">Choose one</option>
+        <option>Spouse</option><option>Child</option><option>Parent</option>
+        <option>Sibling</option><option>Grandchild</option><option>Niece/Nephew</option>
+        <option>Cousin</option><option>Friend</option><option>Colleague</option><option>Other</option>
+      </select>
+      <label for="detail">Anything more specific? (optional)</label>
+      <input id="detail" placeholder="e.g. neighbor for 20 years">
+    </div>
+
+    <div class="step" data-step="1">
+      <% if (people && people.length) { %>
+        <label for="about">Who is this memory about? (optional)</label>
+        <select id="about">
+          <option value="">— someone in the family —</option>
+          <% people.forEach(function(p){ %><option value="<%= p.handle %>"><%= p.name %></option><% }) %>
+        </select>
+      <% } %>
+      <label for="memory">Share a memory</label>
+      <p class="prompts">Some starting points: How did you meet them? What always made them, them?
+        Is there a moment with them you still think about?</p>
+      <textarea id="memory" required placeholder="Write as much or as little as feels right..."></textarea>
+    </div>
+
+    <div class="step" data-step="2">
+      <div id="review"></div>
+    </div>
+
+    <div id="success" class="success" style="display:none;">
+      Thank you — this has been sent to the family for review.
+    </div>
+
+    <div class="nav" id="nav-buttons">
+      <button type="button" class="secondary" id="back-btn" disabled>Back</button>
+      <button type="button" id="next-btn">Next</button>
+    </div>
+  </form>
+</section>
+
+<script src="/js/share.js"></script>
+</body>
+</html>

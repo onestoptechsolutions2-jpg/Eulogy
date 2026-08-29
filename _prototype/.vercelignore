@@ -1,0 +1,5 @@
+Gramps’ Compass_NAVWEB
+*.gramps
+.env
+.env.local
+node_modules

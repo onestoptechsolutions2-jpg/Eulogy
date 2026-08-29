@@ -1,0 +1,48 @@
+<%- include("partials/head", { title: fullName(person) }) %>
+
+<section class="hero" style="padding-top:3.5rem;padding-bottom:1.5rem;">
+  <% if (person.photo_url) { %><img src="<%= person.photo_url %>" alt="<%= fullName(person) %>"><% } %>
+  <h1 style="font-size:2rem;"><%= fullName(person) %></h1>
+  <% if (person.nick) { %><div class="dates">&ldquo;<%= person.nick %>&rdquo;</div><% } %>
+  <% if (lifespan(person)) { %><div class="dates"><%= lifespan(person) %></div><% } %>
+</section>
+
+<section>
+  <p><a href="/tree">← Family tree</a></p>
+
+  <% if (person.bio) { %>
+    <div class="life-story"><% person.bio.split(/\n\n+/).forEach(function(p){ %><p><%= p %></p><% }) %></div>
+  <% } %>
+
+  <div class="kin">
+    <% [["Parents", relatives.parents], ["Brothers &amp; sisters", relatives.siblings], ["Partner", relatives.partners], ["Children", relatives.children]].forEach(function(pair){ %>
+      <% if (pair[1] && pair[1].length) { %>
+        <div class="kin-group">
+          <h3><%- pair[0] %></h3>
+          <ul>
+            <% pair[1].forEach(function(r){ %>
+              <li><a href="/person/<%= r.handle %>"><%= shortName(r) %></a><% if (lifespan(r)) { %> <span class="dates">(<%= lifespan(r) %>)</span><% } %></li>
+            <% }) %>
+          </ul>
+        </div>
+      <% } %>
+    <% }) %>
+  </div>
+
+  <% if (memories.length) { %>
+    <div class="eyebrow" style="margin-top:2.5rem;">Memories shared</div>
+    <div class="voices">
+      <% memories.forEach(function(m){ %>
+        <div class="voice">
+          <blockquote>&ldquo;<%= m.memory %>&rdquo;</blockquote>
+          <cite><%= m.name %>, <%= m.relationship %></cite>
+        </div>
+      <% }) %>
+    </div>
+  <% } %>
+
+  <p class="share-link" style="margin-top:2rem;"><a href="/share">→ Share a memory</a></p>
+</section>
+
+</body>
+</html>

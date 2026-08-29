@@ -1,0 +1,68 @@
+<%- include("partials/head", { title: "Admin" }) %>
+
+<div id="login-gate" class="login-gate">
+  <h2>Admin</h2>
+  <form id="login-form">
+    <label for="pw">Password</label>
+    <input id="pw" type="password">
+    <p id="login-error" style="color:var(--amber);display:none;"></p>
+    <div style="margin-top:1rem;"><button type="submit">Unlock</button></div>
+  </form>
+</div>
+
+<div id="admin-panel" class="admin-body" style="display:none;">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;">
+    <h1 style="margin-bottom:2rem;">Admin</h1>
+    <button type="button" class="secondary" id="logout-btn">Log out</button>
+  </div>
+
+  <section>
+    <h2>Site content</h2>
+    <label>Name</label><input id="f-name">
+    <label>Birth date</label><input id="f-birth">
+    <label>Death date</label><input id="f-death">
+    <label>Hero photo</label>
+    <div id="hero-preview"></div>
+    <input type="file" accept="image/*" id="f-hero-file">
+    <label>Life story</label><textarea id="f-story" style="min-height:220px;"></textarea>
+    <label>Gallery</label>
+    <div id="gallery-rows"></div>
+    <input type="file" accept="image/*" id="f-gallery-file">
+    <label>Service details</label><textarea id="f-service"></textarea>
+    <label>Donation link (optional)</label><input id="f-donation-link">
+    <label>Donation label</label><input id="f-donation-label">
+    <label for="f-subject">This memorial is for (a person in the family tree)</label>
+    <select id="f-subject"><option value="">— none —</option></select>
+    <div style="margin-top:1.5rem;"><button id="save-site-btn">Save site content</button></div>
+  </section>
+
+  <section>
+    <h2>Family tree</h2>
+    <p style="color:var(--sage);font-size:0.9rem;">
+      Upload the family's Gramps file (<code>.gramps</code>, or a Gramps&nbsp;XML export).
+      This replaces the whole tree. Dates and life notes you type below are kept across re-imports.
+    </p>
+    <input type="file" id="f-gramps-file" accept=".gramps,.xml">
+    <div style="margin-top:0.75rem;"><button type="button" id="import-gramps-btn">Import family tree</button></div>
+    <p id="import-status" style="font-size:0.85rem;color:var(--sage);"></p>
+
+    <h3 style="margin-top:2rem;">Dates &amp; life notes</h3>
+    <p style="color:var(--sage);font-size:0.9rem;">The Gramps file has almost no dates. Anything you add here shows on that person's page.</p>
+    <div id="people-editor"></div>
+  </section>
+
+  <section>
+    <h2>Contributions</h2>
+    <p style="color:var(--sage);font-size:0.9rem;">Approve a memory to show it on the person's page. "Feature as quote" also puts it on the homepage.</p>
+    <div id="contrib-list" style="margin-top:1.5rem;"></div>
+  </section>
+
+  <section>
+    <h2>Guestbook moderation</h2>
+    <div id="guestbook-list"></div>
+  </section>
+</div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>
