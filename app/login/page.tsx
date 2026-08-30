@@ -36,6 +36,30 @@ export default async function LoginPage() {
           </button>
         </form>
       </div>
+
+      {process.env.NODE_ENV !== "production" && (
+        <form
+          action={async (formData) => {
+            "use server";
+            await signIn("dev", {
+              email: String(formData.get("email") ?? ""),
+              redirectTo: "/",
+            });
+          }}
+          className="mt-8 flex gap-2 border-t border-[color:var(--rule)] pt-6"
+        >
+          <input
+            name="email"
+            type="email"
+            required
+            placeholder="dev sign-in (local only)"
+            className="field text-xs"
+          />
+          <button type="submit" className="btn ghost text-xs">
+            Go
+          </button>
+        </form>
+      )}
     </main>
   );
 }

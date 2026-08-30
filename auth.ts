@@ -1,13 +1,29 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Facebook from "next-auth/providers/facebook";
+import Credentials from "next-auth/providers/credentials";
 import { provisionUser, getUserByEmail } from "@/lib/provision";
+
+// Dev-only password-less sign-in so the app is testable without real OAuth
+// credentials. Never available in production (Vercel sets NODE_ENV=production).
+const devProvider =
+  process.env.NODE_ENV !== "production"
+    ? [
+        Credentials({
+          id: "dev",
+          name: "Dev sign-in",
+          credentials: { email: { label: "Email", type: "email" } },
+          authorize: (c) =>
+            c?.email ? { id: "dev", email: String(c.email), name: "Dev User" } : null,
+        }),
+      ]
+    : [];
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
-  providers: [Google, Facebook],
+  providers: [Google, Facebook, ...devProvider],
   callbacks: {
     async signIn({ user }) {
       if (!user.email) return false;

@@ -4,17 +4,39 @@ import { db } from "@/db";
 import { people } from "@/db/schema";
 import { requireMember } from "@/lib/access";
 import { countPeople } from "@/lib/queries";
+import { getClaimedPerson } from "@/lib/profile";
 import { PersonRow } from "@/components/people";
+import { fullName } from "@/lib/names";
 
 export default async function Dashboard() {
-  const { tree } = await requireMember();
-  const [count, recent] = await Promise.all([
+  const { tree, user } = await requireMember();
+  const [count, recent, mine] = await Promise.all([
     countPeople(tree.id),
     db.select().from(people).where(eq(people.treeId, tree.id)).orderBy(desc(people.updatedAt)).limit(6),
+    getClaimedPerson(tree.id, user.id),
   ]);
 
   return (
     <div className="flex flex-col gap-10">
+      {count > 0 && (
+        <section
+          className="card p-4 text-sm"
+          style={{ borderLeft: "3px solid var(--indigo)" }}
+        >
+          {mine ? (
+            <>
+              You&rsquo;re <Link href={`/person/${mine.id}`}>{fullName(mine)}</Link> in this
+              tree. <Link href={`/person/${mine.id}/edit`}>Edit your profile</Link>.
+            </>
+          ) : (
+            <>
+              Which one are you? <Link href="/claim">Find yourself and claim your profile</Link>{" "}
+              &mdash; then you can edit it.
+            </>
+          )}
+        </section>
+      )}
+
       <section>
         <form action="/people" className="flex gap-2">
           <input
