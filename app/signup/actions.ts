@@ -1,10 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { signIn } from "@/auth";
 import { emailTaken, createPasswordUser } from "@/lib/credentials";
 import { checkPasswordStrength } from "@/lib/password";
-import { isRedirect } from "@/lib/redirect-error";
 
 export async function signUp(formData: FormData) {
   const name = String(formData.get("name") ?? "").trim().slice(0, 120);
@@ -18,10 +16,8 @@ export async function signUp(formData: FormData) {
 
   await createPasswordUser({ email, name, password });
 
-  try {
-    await signIn("credentials", { email, password, redirectTo: "/feed" });
-  } catch (err) {
-    if (isRedirect(err)) throw err;
-    redirect("/login?error=badcreds");
-  }
+  // Sign-in happens on the login page (client-side credentials flow), which
+  // sidesteps a next-auth v5 beta bug where signIn() from a Server Action
+  // redirects through a GET /api/auth/callback and 500s.
+  redirect("/login?created=1");
 }

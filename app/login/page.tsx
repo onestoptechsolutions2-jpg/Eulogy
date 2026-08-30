@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
-import { isRedirect } from "@/lib/redirect-error";
+import { PasswordForm } from "@/components/PasswordForm";
 
 // never serve a stale copy — keeps Server Action IDs in sync with the deploy
 export const dynamic = "force-dynamic";
@@ -9,10 +9,10 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string; created?: string }>;
 }) {
   if (await auth()) redirect("/feed");
-  const { error, reset } = await searchParams;
+  const { error, reset, created } = await searchParams;
 
   const errorMessage = !error
     ? null
@@ -24,18 +24,6 @@ export default async function LoginPage({
           ? "That email is already registered with a different sign-in method."
           : "Something went wrong with that sign-in. Please try again.";
 
-  async function passwordSignIn(formData: FormData) {
-    "use server";
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
-    const password = String(formData.get("password") ?? "");
-    try {
-      await signIn("credentials", { email, password, redirectTo: "/feed" });
-    } catch (err) {
-      if (isRedirect(err)) throw err;
-      redirect("/login?error=badcreds");
-    }
-  }
-
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-5 py-16">
       <p className="label mb-3">Mizizi</p>
@@ -44,6 +32,11 @@ export default async function LoginPage({
         A private family tree. New here? You&rsquo;ll join as a viewer.
       </p>
 
+      {created && (
+        <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--indigo)" }}>
+          Account created. Sign in with it below.
+        </p>
+      )}
       {reset && (
         <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--indigo)" }}>
           Password updated. Sign in with it below.
@@ -68,17 +61,7 @@ export default async function LoginPage({
         <span className="h-px flex-1 bg-[color:var(--rule)]" /> or <span className="h-px flex-1 bg-[color:var(--rule)]" />
       </div>
 
-      <form action={passwordSignIn} className="flex flex-col gap-3">
-        <label className="flex flex-col gap-1">
-          <span className="label">Email</span>
-          <input name="email" type="email" required className="field" autoComplete="email" />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="label">Password</span>
-          <input name="password" type="password" required className="field" autoComplete="current-password" />
-        </label>
-        <button type="submit" className="btn ghost">Sign in with password</button>
-      </form>
+      <PasswordForm />
 
       <p className="mt-5 flex justify-between text-sm text-[color:var(--ink-soft)]">
         <Link href="/signup">Create an account</Link>
