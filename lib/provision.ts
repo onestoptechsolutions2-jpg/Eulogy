@@ -66,7 +66,9 @@ export async function provisionUser({
     return user;
   }
 
-  let role = isOwner ? "owner" : "viewer";
+  // Self-signups can add themselves and their family during onboarding, so
+  // they need contributor rights, not read-only viewer.
+  let role = isOwner ? "owner" : "contributor";
   let claimPersonId: string | null = null;
 
   if (!isOwner) {

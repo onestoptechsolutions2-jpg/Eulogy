@@ -29,7 +29,8 @@ export default async function LoginPage({
       <p className="label mb-3">Mizizi</p>
       <h1 className="mb-2 text-3xl">Sign in</h1>
       <p className="mb-6 text-[color:var(--ink-soft)]">
-        A private family tree. New here? You&rsquo;ll join as a viewer.
+        A private family tree. New here? <Link href="/signup">Create an account</Link> and
+        link it to your place in the tree.
       </p>
 
       {created && (

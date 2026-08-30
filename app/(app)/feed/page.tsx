@@ -37,8 +37,8 @@ export default async function FeedPage({
           </>
         ) : (
           <>
-            Which one are you? <Link href="/claim">Find yourself in the tree</Link> to claim
-            your profile.
+            Your account isn&rsquo;t linked to anyone yet.{" "}
+            <Link href="/welcome">Find or add yourself</Link> in the tree.
           </>
         )}
       </section>

@@ -25,7 +25,8 @@ export default async function SignupPage({
       <p className="label mb-3">Mizizi</p>
       <h1 className="mb-2 text-3xl">Create an account</h1>
       <p className="mb-6 text-[color:var(--ink-soft)]">
-        You&rsquo;ll be in as a viewer. Whoever runs the tree can give you editing rights.
+        Once you&rsquo;re in, you&rsquo;ll find yourself in the family tree — or add
+        yourself and your close family.
       </p>
 
       {message && (
