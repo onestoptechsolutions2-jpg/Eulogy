@@ -211,8 +211,16 @@ export function kinship(g: FamilyGraph, aId: string, bId: string): Kinship {
   // prefer the MRCA nearest to A, then to B, for the primary label
   mrcas.sort((x, y) => x.da - y.da || x.db - y.db);
   const { da, db } = mrcas[0];
-  const multi = new Set(mrcas.map((m) => m.id)).size > 1;
-  const extra = multi ? " (related on more than one line)" : "";
+
+  // a shared couple (two partners) is one ancestral line, not two — only
+  // genuinely independent lines (e.g. double cousins) warrant the note
+  const lines: string[][] = [];
+  for (const m of mrcas) {
+    const grp = lines.find((g2) => g2.some((id) => g.partnersOf.get(id)?.has(m.id)));
+    if (grp) grp.push(m.id);
+    else lines.push([m.id]);
+  }
+  const extra = lines.length > 1 ? " (related on more than one line)" : "";
   const commonAncestorIds = [...new Set(mrcas.map((m) => m.id))];
 
   const mk = (label: string, reverse: string): Kinship => ({
@@ -247,19 +255,21 @@ export function kinship(g: FamilyGraph, aId: string, bId: string): Kinship {
     return mk(byGender(bGender, "sister", "brother", "sibling"), byGender(aGender, "sister", "brother", "sibling"));
   }
 
-  // B is A's aunt/uncle line  (A closer to the MRCA)
+  // A is one generation below the common ancestor, B is deeper:
+  // A is B's (great-)aunt/uncle, so B is A's (great-)niece/nephew.
   if (da === 1 && db >= 2) {
     const gp = greats(db - 2);
     return mk(
-      `${gp}${byGender(bGender, "aunt", "uncle", "aunt or uncle")}`,
-      `${gp}${byGender(aGender, "niece", "nephew", "niece or nephew")}`,
+      `${gp}${byGender(bGender, "niece", "nephew", "niece or nephew")}`,
+      `${gp}${byGender(aGender, "aunt", "uncle", "aunt or uncle")}`,
     );
   }
+  // mirror image: B is A's (great-)aunt/uncle.
   if (db === 1 && da >= 2) {
     const gp = greats(da - 2);
     return mk(
-      `${gp}${byGender(bGender, "niece", "nephew", "niece or nephew")}`,
-      `${gp}${byGender(aGender, "aunt", "uncle", "aunt or uncle")}`,
+      `${gp}${byGender(bGender, "aunt", "uncle", "aunt or uncle")}`,
+      `${gp}${byGender(aGender, "niece", "nephew", "niece or nephew")}`,
     );
   }
 

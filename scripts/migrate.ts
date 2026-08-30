@@ -8,20 +8,31 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const dir = path.join(process.cwd(), "db", "migrations");
 const sql = neon(process.env.DATABASE_URL);
 
+// The neon HTTP client only exposes the tagged-template form; our migration
+// statements carry no parameters, so run each as a literal.
+function run(statement: string) {
+  const arr = Object.assign([statement], { raw: [statement] }) as unknown as TemplateStringsArray;
+  return sql(arr);
+}
+
+const dir = path.join(process.cwd(), "db", "migrations");
 const files = (await readdir(dir)).filter((f) => f.endsWith(".sql")).sort();
+
 for (const file of files) {
-  const text = await readFile(path.join(dir, file), "utf8");
-  const statements = text
+  const raw = await readFile(path.join(dir, file), "utf8");
+  // strip whole-line `--` comments first, then split on statement terminators
+  const body = raw
+    .split(/\r?\n/)
+    .filter((line) => !line.trim().startsWith("--"))
+    .join("\n");
+  const statements = body
     .split(/;\s*(?:\r?\n|$)/)
     .map((s) => s.trim())
-    .filter((s) => s && !s.startsWith("--"));
+    .filter(Boolean);
   process.stdout.write(`${file} … `);
-  for (const st of statements) {
-    await sql.query(st);
-  }
+  for (const st of statements) await run(st);
   console.log(`ok (${statements.length} statements)`);
 }
 console.log("Migrations applied.");

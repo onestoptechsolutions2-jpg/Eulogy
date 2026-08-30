@@ -82,10 +82,12 @@ test("ancestorDistances", () => {
 test("shortestPath chain", () => {
   const path = shortestPath(g, "cal", "hal");
   assert.ok(path);
-  assert.deepEqual(
-    path!.map((s) => s.id),
-    ["cal", "ann", "eve", "hal"],
-  );
+  // cal -> (a parent) -> eve -> hal ; the shared parent may be ann or bob
+  assert.equal(path!.length, 4);
+  assert.equal(path![0].id, "cal");
+  assert.ok(["ann", "bob"].includes(path![1].id));
+  assert.equal(path![2].id, "eve");
+  assert.equal(path![3].id, "hal");
   assert.deepEqual(
     path!.map((s) => s.relToPrev),
     ["", "parent", "child", "child"],
