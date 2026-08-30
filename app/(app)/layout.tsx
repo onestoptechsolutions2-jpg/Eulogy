@@ -1,4 +1,4 @@
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/lib/access";
 import { Nav } from "@/components/Nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

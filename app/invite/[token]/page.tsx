@@ -2,7 +2,7 @@ import Link from "next/link";
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { invitations, trees } from "@/db/schema";
-import { getCurrentUser, requireMember } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/access";
 import { redirect } from "next/navigation";
 
 export default async function InvitePage({ params }: { params: Promise<{ token: string }> }) {
@@ -23,22 +23,21 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
   const [tree] = await db.select().from(trees).where(eq(trees.id, inv.treeId));
   const user = await getCurrentUser();
 
-  // Once signed in as the invited address, membership is adopted automatically.
-  if (user && user.email.toLowerCase() === inv.email.toLowerCase()) {
-    await requireMember(); // triggers acceptance, then
-    redirect("/");
-  }
+  // The role upgrade + person-claim happens on sign-in (provisionUser), so
+  // once you're in as the invited address there's nothing left to do here.
+  if (user && user.email.toLowerCase() === inv.email.toLowerCase()) redirect("/");
 
   return (
     <Shell>
       <p className="label mb-2">You&rsquo;re invited</p>
       <h1 className="mb-3 text-2xl">Join the {tree?.name ?? "family"} tree</h1>
       <p className="mb-6 text-[color:var(--ink-soft)]">
-        This invitation is for <strong>{inv.email}</strong>. Sign in with that address and
-        you&rsquo;ll be added automatically.
+        This invitation is for <strong>{inv.email}</strong> as{" "}
+        <strong>{inv.role}</strong>. Sign in with that address (Google or Facebook) and
+        you&rsquo;ll be set up automatically.
       </p>
       <Link href="/login" className="btn">
-        Sign in to accept
+        Sign in
       </Link>
     </Shell>
   );

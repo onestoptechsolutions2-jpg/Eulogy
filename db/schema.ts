@@ -11,18 +11,11 @@ import {
 // --- accounts & access -------------------------------------------------
 
 export const users = pgTable("users", {
-  id: text("id").primaryKey(), // nanoid
+  id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name").notNull().default(""),
+  image: text("image").notNull().default(""),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
-
-// single-use magic-link tokens
-export const loginTokens = pgTable("login_tokens", {
-  token: text("token").primaryKey(),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-  usedAt: timestamp("used_at", { withTimezone: true }),
 });
 
 export const trees = pgTable("trees", {

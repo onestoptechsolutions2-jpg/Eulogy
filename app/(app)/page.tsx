@@ -2,7 +2,7 @@ import Link from "next/link";
 import { desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { people } from "@/db/schema";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/lib/access";
 import { countPeople } from "@/lib/queries";
 import { PersonRow } from "@/components/people";
 

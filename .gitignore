@@ -9,3 +9,6 @@ build/
 next-env.d.ts
 .vercel
 _prototype/node_modules/
+
+# build artifacts
+tsconfig.tsbuildinfo

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { canEdit } from "@/lib/auth";
+import { canEdit } from "@/lib/access";
+import { signOut } from "@/auth";
 
 export function Nav({
   treeName,
@@ -34,9 +35,16 @@ export function Nav({
       </div>
       <div className="label flex items-center gap-3">
         <span>{email}</span>
-        <Link href="/logout" className="no-underline">
-          sign out
-        </Link>
+        <form
+          action={async () => {
+            "use server";
+            await signOut({ redirectTo: "/login" });
+          }}
+        >
+          <button type="submit" className="no-underline text-[color:var(--indigo)]">
+            sign out
+          </button>
+        </form>
       </div>
     </header>
   );

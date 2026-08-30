@@ -5,10 +5,9 @@ import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { invitations, treeMembers } from "@/db/schema";
-import { requireMember, canEdit, isOwner, appUrl } from "@/lib/auth";
+import { requireMember, canEdit, isOwner } from "@/lib/access";
 import { parseGramps } from "@/lib/gramps";
 import { replaceGenealogy } from "@/lib/import";
-import { sendInvite } from "@/lib/email";
 import { newId, newToken } from "@/lib/ids";
 
 export async function importGramps(formData: FormData) {
@@ -31,7 +30,10 @@ export async function importGramps(formData: FormData) {
   redirect(`/admin?imported=${counts.people}`);
 }
 
-export async function sendInvitation(formData: FormData) {
+// Anyone who signs in is a viewer already; an invitation just pre-assigns a
+// higher role (and optionally which person they are). No email is sent —
+// the owner copies the generated link and shares it however they like.
+export async function createInvitation(formData: FormData) {
   const { tree, role, user } = await requireMember();
   if (!canEdit(role)) redirect("/admin?error=forbidden");
 
@@ -40,18 +42,16 @@ export async function sendInvitation(formData: FormData) {
   const personId = String(formData.get("personId") ?? "") || null;
   if (!email.includes("@")) redirect("/admin?error=bademail");
 
-  const token = newToken();
   await db.insert(invitations).values({
     id: newId(),
     email,
     treeId: tree.id,
     role: ["editor", "contributor", "viewer"].includes(inviteRole) ? inviteRole : "contributor",
     personId,
-    token,
+    token: newToken(),
     invitedBy: user.id,
-    expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   });
-  await sendInvite(email, `${appUrl()}/invite/${token}`, tree.name, user.name || user.email);
 
   revalidatePath("/admin");
   redirect("/admin?invited=1");

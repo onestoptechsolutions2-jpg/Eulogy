@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/lib/access";
 import { graphFor } from "@/lib/queries";
 import { familyUnits, rootPeople } from "@/lib/relatives";
 import { fullName, shortName, lifespan } from "@/lib/names";

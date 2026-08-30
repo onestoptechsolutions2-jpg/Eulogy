@@ -1,7 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { people } from "@/db/schema";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/lib/access";
 import { searchPeople } from "@/lib/queries";
 import { PersonRow } from "@/components/people";
 

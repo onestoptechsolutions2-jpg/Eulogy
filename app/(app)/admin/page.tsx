@@ -1,9 +1,9 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { invitations, treeMembers, users, people } from "@/db/schema";
-import { requireMember, canEdit, isOwner } from "@/lib/auth";
+import { requireMember, canEdit, isOwner, appUrl } from "@/lib/access";
 import { fullName } from "@/lib/names";
-import { importGramps, sendInvitation, revokeInvitation, setMemberRole } from "./actions";
+import { importGramps, createInvitation, revokeInvitation, setMemberRole } from "./actions";
 
 export default async function AdminPage({
   searchParams,
@@ -30,7 +30,7 @@ export default async function AdminPage({
   return (
     <div className="flex flex-col gap-12">
       {imported && <Banner ok>Imported {imported} people.</Banner>}
-      {invited && <Banner ok>Invitation sent.</Banner>}
+      {invited && <Banner ok>Invitation created — copy its link below and send it.</Banner>}
       {error && <Banner>{errorText(error)}</Banner>}
 
       <section>
@@ -50,7 +50,12 @@ export default async function AdminPage({
 
       <section>
         <h2 className="mb-3 text-xl">Invitations</h2>
-        <form action={sendInvitation} className="grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-end">
+        <p className="mb-4 text-sm text-[color:var(--ink-soft)]">
+          Anyone who signs in is a <strong>viewer</strong> automatically. Create an
+          invitation only to give someone editing rights or link them to their person
+          in the tree — then send them the link it generates.
+        </p>
+        <form action={createInvitation} className="grid gap-3 sm:grid-cols-[1fr_auto_1fr_auto] sm:items-end">
           <label className="flex flex-col gap-1">
             <span className="label">Email</span>
             <input name="email" type="email" required className="field" placeholder="cousin@example.com" />
@@ -80,21 +85,28 @@ export default async function AdminPage({
         </form>
 
         {pending.length > 0 && (
-          <ul className="mt-5 flex flex-col gap-2">
+          <ul className="mt-5 flex flex-col gap-3">
             {pending.map((inv) => (
               <li
                 key={inv.id}
-                className="flex items-center justify-between gap-4 border-b border-[color:var(--rule)] pb-2 text-sm last:border-b-0"
+                className="flex flex-col gap-1 border-b border-[color:var(--rule)] pb-3 text-sm last:border-b-0"
               >
-                <span>
-                  {inv.email} <span className="label">· {inv.role}</span>
-                </span>
-                <form action={revokeInvitation}>
-                  <input type="hidden" name="id" value={inv.id} />
-                  <button className="btn ghost" type="submit">
-                    Revoke
-                  </button>
-                </form>
+                <div className="flex items-center justify-between gap-4">
+                  <span>
+                    {inv.email} <span className="label">· {inv.role}</span>
+                  </span>
+                  <form action={revokeInvitation}>
+                    <input type="hidden" name="id" value={inv.id} />
+                    <button className="btn ghost" type="submit">
+                      Revoke
+                    </button>
+                  </form>
+                </div>
+                <input
+                  readOnly
+                  className="field font-mono text-xs"
+                  defaultValue={`${appUrl()}/invite/${inv.token}`}
+                />
               </li>
             ))}
           </ul>

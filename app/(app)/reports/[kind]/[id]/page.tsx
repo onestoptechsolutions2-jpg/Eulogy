@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireMember } from "@/lib/auth";
+import { requireMember } from "@/lib/access";
 import { graphFor, getPerson } from "@/lib/queries";
 import { ancestorDistances, descendantDistances } from "@/lib/kinship";
 import { fullName, lifespan } from "@/lib/names";
