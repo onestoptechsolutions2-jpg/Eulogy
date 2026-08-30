@@ -11,7 +11,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ error?: string; reset?: string }>;
 }) {
-  if (await auth()) redirect("/");
+  if (await auth()) redirect("/feed");
   const { error, reset } = await searchParams;
 
   const errorMessage = !error
@@ -29,7 +29,7 @@ export default async function LoginPage({
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
     try {
-      await signIn("credentials", { email, password, redirectTo: "/" });
+      await signIn("credentials", { email, password, redirectTo: "/feed" });
     } catch (err) {
       if (isRedirect(err)) throw err;
       redirect("/login?error=badcreds");
@@ -56,10 +56,10 @@ export default async function LoginPage({
       )}
 
       <div className="flex flex-col gap-3">
-        <form action={async () => { "use server"; await signIn("google", { redirectTo: "/" }); }}>
+        <form action={async () => { "use server"; await signIn("google", { redirectTo: "/feed" }); }}>
           <button type="submit" className="btn w-full">Continue with Google</button>
         </form>
-        <form action={async () => { "use server"; await signIn("facebook", { redirectTo: "/" }); }}>
+        <form action={async () => { "use server"; await signIn("facebook", { redirectTo: "/feed" }); }}>
           <button type="submit" className="btn ghost w-full">Continue with Facebook</button>
         </form>
       </div>
@@ -89,7 +89,7 @@ export default async function LoginPage({
         <form
           action={async (formData) => {
             "use server";
-            await signIn("dev", { email: String(formData.get("email") ?? ""), redirectTo: "/" });
+            await signIn("dev", { email: String(formData.get("email") ?? ""), redirectTo: "/feed" });
           }}
           className="mt-8 flex gap-2 border-t border-[color:var(--rule)] pt-6"
         >

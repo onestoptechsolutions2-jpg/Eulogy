@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   // The role upgrade + person-claim happens on sign-in (provisionUser), so
   // once you're in as the invited address there's nothing left to do here.
-  if (user && user.email.toLowerCase() === inv.email.toLowerCase()) redirect("/");
+  if (user && user.email.toLowerCase() === inv.email.toLowerCase()) redirect("/feed");
 
   return (
     <Shell>

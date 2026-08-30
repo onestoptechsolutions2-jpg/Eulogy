@@ -13,7 +13,7 @@ const clip = (v: FormDataEntryValue | null, max: number) => String(v ?? "").trim
 export async function createPost(formData: FormData) {
   const { tree, user } = await requireMember();
   const body = clip(formData.get("body"), 8000);
-  if (!body) redirect("/?error=empty");
+  if (!body) redirect("/feed?error=empty");
 
   await db.insert(posts).values({
     id: newId(),
@@ -26,8 +26,8 @@ export async function createPost(formData: FormData) {
     aboutPersonId: clip(formData.get("aboutPersonId"), 40) || null,
   });
 
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/feed");
+  redirect("/feed");
 }
 
 export async function deletePost(formData: FormData) {
@@ -37,28 +37,28 @@ export async function deletePost(formData: FormData) {
     .select()
     .from(posts)
     .where(and(eq(posts.treeId, tree.id), eq(posts.id, id)));
-  if (!post) redirect("/");
-  if (post.authorUserId !== user.id && !canEdit(role)) redirect("/?error=forbidden");
+  if (!post) redirect("/feed");
+  if (post.authorUserId !== user.id && !canEdit(role)) redirect("/feed?error=forbidden");
 
   await db.delete(posts).where(and(eq(posts.treeId, tree.id), eq(posts.id, id)));
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/feed");
+  redirect("/feed");
 }
 
 export async function togglePin(formData: FormData) {
   const { tree, role } = await requireMember();
-  if (!canEdit(role)) redirect("/?error=forbidden");
+  if (!canEdit(role)) redirect("/feed?error=forbidden");
   const id = String(formData.get("id") ?? "");
   const [post] = await db
     .select()
     .from(posts)
     .where(and(eq(posts.treeId, tree.id), eq(posts.id, id)));
-  if (!post) redirect("/");
+  if (!post) redirect("/feed");
 
   await db
     .update(posts)
     .set({ pinned: !post.pinned })
     .where(and(eq(posts.treeId, tree.id), eq(posts.id, id)));
-  revalidatePath("/");
-  redirect("/");
+  revalidatePath("/feed");
+  redirect("/feed");
 }

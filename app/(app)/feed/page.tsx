@@ -7,7 +7,7 @@ import { getClaimedPerson } from "@/lib/profile";
 import { listPosts } from "@/lib/posts";
 import { fullName } from "@/lib/names";
 import { PostCard } from "@/components/PostCard";
-import { createPost } from "./feed-actions";
+import { createPost } from "./actions";
 
 export default async function FeedPage({
   searchParams,

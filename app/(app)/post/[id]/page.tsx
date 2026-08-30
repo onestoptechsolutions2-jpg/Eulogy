@@ -26,7 +26,7 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
 
   return (
     <div className="flex flex-col gap-4">
-      <Link href="/" className="text-sm">← Back to the feed</Link>
+      <Link href="/feed" className="text-sm">← Back to the feed</Link>
       <PostCard
         post={{ ...post, about }}
         canModerate={canEdit(role)}

@@ -10,7 +10,7 @@ export default async function SignupPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  if (await auth()) redirect("/");
+  if (await auth()) redirect("/feed");
   const { error } = await searchParams;
 
   const message =

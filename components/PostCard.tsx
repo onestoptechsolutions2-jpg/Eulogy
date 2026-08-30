@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { FeedItem } from "@/lib/posts";
 import { timeAgo } from "@/lib/posts";
 import { fullName } from "@/lib/names";
-import { deletePost, togglePin } from "@/app/(app)/feed-actions";
+import { deletePost, togglePin } from "@/app/(app)/feed/actions";
 
 export function PostCard({
   post,

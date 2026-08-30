@@ -12,7 +12,7 @@ export function Nav({
   role: string;
 }) {
   const links: [string, string][] = [
-    ["/", "Feed"],
+    ["/feed", "Feed"],
     ["/people", "People"],
     ["/relate", "Relate"],
     ["/tree", "Tree"],
@@ -23,7 +23,7 @@ export function Nav({
   return (
     <header className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-[color:var(--rule)] pb-4">
       <div className="flex items-baseline gap-4">
-        <Link href="/" className="font-serif text-lg no-underline">
+        <Link href="/feed" className="font-serif text-lg no-underline">
           {treeName}
         </Link>
         <nav className="flex gap-4 text-sm">
