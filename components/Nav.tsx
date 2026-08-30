@@ -16,6 +16,7 @@ export function Nav({
     ["/people", "People"],
     ["/relate", "Relate"],
     ["/tree", "Tree"],
+    ["/stats", "Stats"],
     ["/settings", "You"],
   ];
   if (canEdit(role)) links.push(["/admin", "Admin"]);

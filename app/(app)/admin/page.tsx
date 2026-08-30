@@ -45,7 +45,11 @@ export default async function AdminPage({
             Import family tree
           </button>
         </form>
-        <p className="label mt-2">{everyone.length} people currently loaded</p>
+        <p className="label mt-2">
+          {everyone.length} people currently loaded ·{" "}
+          <a href="/admin/tree">edit people &amp; relationships</a> ·{" "}
+          <a href="/stats">statistics</a>
+        </p>
       </section>
 
       <section>

@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { requireMember } from "@/lib/access";
-import { graphFor } from "@/lib/queries";
+import { graphFor, loadGenealogy } from "@/lib/queries";
 import { familyUnits, rootPeople } from "@/lib/relatives";
+import { buildLayout } from "@/lib/graph";
 import { fullName, shortName, lifespan } from "@/lib/names";
+import { FamilyGraph } from "@/components/FamilyGraph";
 
 export default async function TreePage() {
   const { tree } = await requireMember();
   const { graph, people, families } = await graphFor(tree.id);
   const units = familyUnits(people, families);
   const roots = rootPeople(people, graph);
+  const g = await loadGenealogy(tree.id);
+  const layout = buildLayout(g.people, g.families);
 
   return (
     <div className="flex flex-col gap-8">
@@ -23,6 +27,16 @@ export default async function TreePage() {
         <p className="text-[color:var(--ink-soft)]">Nothing loaded yet.</p>
       ) : (
         <>
+          <section>
+            <h2 className="label mb-2">Graph</h2>
+            <FamilyGraph layout={layout} />
+            <p className="label mt-2">
+              <span style={{ color: "var(--earth-ink)" }}>■</span> female ·{" "}
+              <span style={{ color: "var(--indigo)" }}>■</span> male · faded = deceased ·
+              small dot = a marriage / union
+            </p>
+          </section>
+
           {roots.length > 0 && (
             <section>
               <h2 className="label mb-2">Earliest known</h2>
