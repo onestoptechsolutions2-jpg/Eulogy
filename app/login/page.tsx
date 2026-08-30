@@ -11,6 +11,16 @@ export default async function LoginPage({
   if (await auth()) redirect("/");
   const { error, reset } = await searchParams;
 
+  const errorMessage = !error
+    ? null
+    : error === "badcreds" || error === "CredentialsSignin"
+      ? "That email and password don’t match."
+      : error === "expired" || error === "SessionRequired"
+        ? "Your session ended — please sign in again."
+        : error === "OAuthAccountNotLinked"
+          ? "That email is already registered with a different sign-in method."
+          : "Something went wrong with that sign-in. Please try again.";
+
   async function passwordSignIn(formData: FormData) {
     "use server";
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -36,9 +46,9 @@ export default async function LoginPage({
           Password updated. Sign in with it below.
         </p>
       )}
-      {(error === "badcreds" || error === "CredentialsSignin") && (
+      {errorMessage && (
         <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
-          That email and password don&rsquo;t match.
+          {errorMessage}
         </p>
       )}
 
