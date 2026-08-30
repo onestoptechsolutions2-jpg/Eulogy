@@ -2,10 +2,26 @@ import Link from "next/link";
 import { requireMember } from "@/lib/access";
 import { getClaimedPerson } from "@/lib/profile";
 import { fullName } from "@/lib/names";
+import { changePassword } from "./actions";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ pw?: string }>;
+}) {
   const { tree, user, role } = await requireMember();
   const mine = await getClaimedPerson(tree.id, user.id);
+  const { pw } = await searchParams;
+  const hasPassword = !!user.passwordHash;
+
+  const pwMsg =
+    pw === "ok"
+      ? "Password updated."
+      : pw === "wrong"
+        ? "Your current password is wrong."
+        : pw
+          ? pw
+          : null;
 
   return (
     <div className="flex max-w-measure flex-col gap-8">
@@ -19,12 +35,41 @@ export default async function SettingsPage() {
           <dd>{user.email}</dd>
           <dt className="label">Role</dt>
           <dd>{role}</dd>
+          <dt className="label">Sign-in</dt>
+          <dd>{hasPassword ? "Email + password (and any linked social login)" : "Google / Facebook"}</dd>
         </dl>
-        <p className="mt-4 text-xs text-[color:var(--ink-soft)]">
-          You signed in with Google or Facebook — your name, email and password are
-          managed there, not here. To use a different address, sign out and sign in
-          with that account.
+      </section>
+
+      <section>
+        <h2 className="label mb-2">{hasPassword ? "Change password" : "Set a password"}</h2>
+        <p className="mb-3 text-sm text-[color:var(--ink-soft)]">
+          {hasPassword
+            ? "You can also sign in with email and password."
+            : "Add one so you can sign in without Google or Facebook."}
         </p>
+        {pwMsg && (
+          <p
+            className="card mb-3 p-3 text-sm"
+            style={{ borderLeft: `3px solid ${pw === "ok" ? "var(--indigo)" : "var(--earth)"}` }}
+          >
+            {pwMsg}
+          </p>
+        )}
+        <form action={changePassword} className="flex flex-col gap-3">
+          {hasPassword && (
+            <label className="flex flex-col gap-1">
+              <span className="label">Current password</span>
+              <input name="current" type="password" required className="field" autoComplete="current-password" />
+            </label>
+          )}
+          <label className="flex flex-col gap-1">
+            <span className="label">New password</span>
+            <input name="next" type="password" required minLength={8} className="field" autoComplete="new-password" />
+          </label>
+          <button type="submit" className="btn self-start">
+            {hasPassword ? "Change password" : "Set password"}
+          </button>
+        </form>
       </section>
 
       <section>

@@ -15,7 +15,15 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   name: text("name").notNull().default(""),
   image: text("image").notNull().default(""),
+  passwordHash: text("password_hash").notNull().default(""), // scrypt$salt$hash, "" = OAuth-only
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  token: text("token").primaryKey(),
+  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
 });
 
 export const trees = pgTable("trees", {
