@@ -39,6 +39,7 @@ export async function updatePerson(formData: FormData) {
       living: !deathDate,
       bio: s(formData.get("bio"), 4000),
       photoUrl: s(formData.get("photoUrl"), 600),
+      coverUrl: s(formData.get("coverUrl"), 600),
       updatedAt: new Date(),
     })
     .where(and(eq(people.treeId, tree.id), eq(people.id, id)));

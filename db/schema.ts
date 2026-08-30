@@ -86,6 +86,7 @@ export const people = pgTable(
     living: boolean("living").notNull().default(true),
     claimedByUserId: text("claimed_by_user_id").references(() => users.id, { onDelete: "set null" }),
     photoUrl: text("photo_url").notNull().default(""),
+    coverUrl: text("cover_url").notNull().default(""),
     bio: text("bio").notNull().default(""),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -151,8 +152,83 @@ export const editSuggestions = pgTable("edit_suggestions", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+// --- photos & life events ---------------------------------------------
+
+export const media = pgTable(
+  "media",
+  {
+    id: text("id").primaryKey(),
+    treeId: text("tree_id").notNull().references(() => trees.id, { onDelete: "cascade" }),
+    personId: text("person_id"),
+    kind: text("kind").notNull().default("gallery"), // avatar | cover | gallery
+    mimeType: text("mime_type").notNull(),
+    data: text("data").notNull(), // base64-encoded bytes
+    byteSize: integer("byte_size").notNull().default(0),
+    caption: text("caption").notNull().default(""),
+    uploadedByUserId: text("uploaded_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("media_person_idx").on(t.personId, t.createdAt),
+    index("media_tree_idx").on(t.treeId, t.createdAt),
+  ],
+);
+
+export const events = pgTable(
+  "events",
+  {
+    id: text("id").primaryKey(),
+    treeId: text("tree_id").notNull().references(() => trees.id, { onDelete: "cascade" }),
+    personId: text("person_id").notNull(),
+    kind: text("kind").notNull().default("custom"),
+    title: text("title").notNull().default(""),
+    date: text("date").notNull().default(""),
+    place: text("place").notNull().default(""),
+    note: text("note").notNull().default(""),
+    createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("events_person_idx").on(t.personId)],
+);
+
+// --- shared eulogy ---------------------------------------------------
+
+export const eulogies = pgTable("eulogies", {
+  id: text("id").primaryKey(),
+  treeId: text("tree_id").notNull().references(() => trees.id, { onDelete: "cascade" }),
+  personId: text("person_id").notNull(),
+  title: text("title").notNull().default(""),
+  intro: text("intro").notNull().default(""),
+  shareToken: text("share_token").notNull().unique(),
+  linkEnabled: boolean("link_enabled").notNull().default(false),
+  allowTributes: boolean("allow_tributes").notNull().default(true),
+  createdByUserId: text("created_by_user_id").references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const eulogyEntries = pgTable(
+  "eulogy_entries",
+  {
+    id: text("id").primaryKey(),
+    eulogyId: text("eulogy_id").notNull().references(() => eulogies.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id").references(() => users.id, { onDelete: "set null" }),
+    authorName: text("author_name").notNull().default(""),
+    relationship: text("relationship").notNull().default(""),
+    body: text("body").notNull().default(""),
+    status: text("status").notNull().default("published"), // published | pending | dismissed
+    source: text("source").notNull().default("member"), // member | link
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("eulogy_entries_eulogy_idx").on(t.eulogyId, t.createdAt)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Tree = typeof trees.$inferSelect;
 export type Person = typeof people.$inferSelect;
 export type Family = typeof families.$inferSelect;
 export type Invitation = typeof invitations.$inferSelect;
+export type Media = typeof media.$inferSelect;
+export type LifeEvent = typeof events.$inferSelect;
+export type Eulogy = typeof eulogies.$inferSelect;
+export type EulogyEntry = typeof eulogyEntries.$inferSelect;
