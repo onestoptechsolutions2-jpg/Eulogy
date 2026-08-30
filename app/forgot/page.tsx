@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { requestReset } from "./actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function ForgotPage({
   searchParams,
 }: {

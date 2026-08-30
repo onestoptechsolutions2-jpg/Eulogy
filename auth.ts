@@ -5,9 +5,10 @@ import Credentials from "next-auth/providers/credentials";
 import { provisionUser, getUserByEmail } from "@/lib/provision";
 import { verifyPassword } from "@/lib/password";
 
-// Email + password
+// Email + password. Keep the DEFAULT id ("credentials") — a custom id here
+// makes signIn() from a Server Action redirect to a GET /api/auth/callback
+// and 500 (next-auth v5 beta bug).
 const password = Credentials({
-  id: "password",
   name: "Email and password",
   credentials: { email: {}, password: {} },
   authorize: async (c) => {

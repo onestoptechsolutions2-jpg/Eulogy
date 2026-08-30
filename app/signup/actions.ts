@@ -19,7 +19,7 @@ export async function signUp(formData: FormData) {
   await createPasswordUser({ email, name, password });
 
   try {
-    await signIn("password", { email, password, redirectTo: "/" });
+    await signIn("credentials", { email, password, redirectTo: "/" });
   } catch (err) {
     if (isRedirect(err)) throw err;
     redirect("/login?error=badcreds");

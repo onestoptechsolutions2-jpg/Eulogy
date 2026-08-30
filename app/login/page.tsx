@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import { auth, signIn } from "@/auth";
 import { isRedirect } from "@/lib/redirect-error";
 
+// never serve a stale copy — keeps Server Action IDs in sync with the deploy
+export const dynamic = "force-dynamic";
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -26,7 +29,7 @@ export default async function LoginPage({
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const password = String(formData.get("password") ?? "");
     try {
-      await signIn("password", { email, password, redirectTo: "/" });
+      await signIn("credentials", { email, password, redirectTo: "/" });
     } catch (err) {
       if (isRedirect(err)) throw err;
       redirect("/login?error=badcreds");
