@@ -1,90 +1,97 @@
 import Link from "next/link";
-import { desc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { people } from "@/db/schema";
-import { requireMember } from "@/lib/access";
-import { countPeople } from "@/lib/queries";
+import { requireMember, canEdit } from "@/lib/access";
 import { getClaimedPerson } from "@/lib/profile";
-import { PersonRow } from "@/components/people";
+import { listPosts } from "@/lib/posts";
 import { fullName } from "@/lib/names";
+import { PostCard } from "@/components/PostCard";
+import { createPost } from "./feed-actions";
 
-export default async function Dashboard() {
-  const { tree, user } = await requireMember();
-  const [count, recent, mine] = await Promise.all([
-    countPeople(tree.id),
-    db.select().from(people).where(eq(people.treeId, tree.id)).orderBy(desc(people.updatedAt)).limit(6),
+export default async function FeedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { tree, user, role } = await requireMember();
+  const { error } = await searchParams;
+
+  const [feed, mine, peopleRows] = await Promise.all([
+    listPosts(tree.id),
     getClaimedPerson(tree.id, user.id),
+    db
+      .select({ id: people.id, given: people.given, surname: people.surname, prefix: people.prefix })
+      .from(people)
+      .where(eq(people.treeId, tree.id))
+      .orderBy(asc(people.surname), asc(people.given)),
   ]);
 
   return (
-    <div className="flex flex-col gap-10">
-      {count > 0 && (
-        <section
-          className="card p-4 text-sm"
-          style={{ borderLeft: "3px solid var(--indigo)" }}
-        >
-          {mine ? (
-            <>
-              You&rsquo;re <Link href={`/person/${mine.id}`}>{fullName(mine)}</Link> in this
-              tree. <Link href={`/person/${mine.id}/edit`}>Edit your profile</Link>.
-            </>
-          ) : (
-            <>
-              Which one are you? <Link href="/claim">Find yourself and claim your profile</Link>{" "}
-              &mdash; then you can edit it.
-            </>
-          )}
-        </section>
+    <div className="flex flex-col gap-6">
+      <section className="card p-4 text-sm" style={{ borderLeft: "3px solid var(--indigo)" }}>
+        {mine ? (
+          <>
+            Signed in as <Link href={`/person/${mine.id}`}>{fullName(mine)}</Link>.{" "}
+            <Link href={`/person/${mine.id}/edit`}>Edit your profile</Link>.
+          </>
+        ) : (
+          <>
+            Which one are you? <Link href="/claim">Find yourself in the tree</Link> to claim
+            your profile.
+          </>
+        )}
+      </section>
+
+      {error === "empty" && (
+        <p className="text-sm text-[color:var(--earth-ink)]">Write something first.</p>
+      )}
+      {error === "forbidden" && (
+        <p className="text-sm text-[color:var(--earth-ink)]">You can&rsquo;t do that.</p>
       )}
 
-      <section>
-        <form action="/people" className="flex gap-2">
-          <input
-            name="q"
-            className="field"
-            placeholder="Search people by name…"
-            aria-label="Search people"
+      <details className="card p-4">
+        <summary className="cursor-pointer select-none font-serif text-lg">
+          Share something with the family
+        </summary>
+        <form action={createPost} className="mt-4 flex flex-col gap-3">
+          <input name="title" className="field" placeholder="Title (optional)" maxLength={160} />
+          <textarea
+            name="body"
+            required
+            className="field min-h-[7rem]"
+            placeholder="A story, an update, some news…"
           />
-          <button className="btn" type="submit">
-            Search
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input name="photoUrl" className="field" placeholder="Photo URL (optional)" />
+            <select name="aboutPersonId" defaultValue="" className="field">
+              <option value="">Not about anyone in particular</option>
+              {peopleRows.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {fullName(p)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className="btn self-start">Post</button>
         </form>
-        <p className="label mt-2">
-          {count} {count === 1 ? "person" : "people"} in the tree
+      </details>
+
+      {feed.length === 0 ? (
+        <p className="py-8 text-center text-[color:var(--ink-soft)]">
+          Nothing here yet. Be the first to share a story.
         </p>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-3">
-        <Link href="/people" className="card no-underline p-4">
-          <span className="label">Browse</span>
-          <span className="mt-1 block font-serif text-lg">Everyone</span>
-        </Link>
-        <Link href="/relate" className="card no-underline p-4">
-          <span className="label">Find</span>
-          <span className="mt-1 block font-serif text-lg">How two people connect</span>
-        </Link>
-        <Link href="/tree" className="card no-underline p-4">
-          <span className="label">View</span>
-          <span className="mt-1 block font-serif text-lg">The whole tree</span>
-        </Link>
-      </section>
-
-      {recent.length > 0 && (
-        <section>
-          <h2 className="label mb-2">Recently updated</h2>
-          <ul>
-            {recent.map((p) => (
-              <PersonRow key={p.id} p={p} />
-            ))}
-          </ul>
-        </section>
-      )}
-
-      {count === 0 && (
-        <p className="text-[color:var(--ink-soft)]">
-          Nothing loaded yet. Import the family&rsquo;s Gramps file from{" "}
-          <Link href="/admin">Admin</Link>.
-        </p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {feed.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              canModerate={canEdit(role)}
+              isAuthor={post.authorUserId === user.id}
+            />
+          ))}
+        </div>
       )}
     </div>
   );

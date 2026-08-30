@@ -119,6 +119,28 @@ export const familyChildren = pgTable(
   ],
 );
 
+// --- family feed (posts & stories) ---------------------------------------
+
+export const posts = pgTable(
+  "posts",
+  {
+    id: text("id").primaryKey(),
+    treeId: text("tree_id").notNull().references(() => trees.id, { onDelete: "cascade" }),
+    authorUserId: text("author_user_id").references(() => users.id, { onDelete: "set null" }),
+    authorName: text("author_name").notNull().default(""),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull().default(""),
+    photoUrl: text("photo_url").notNull().default(""),
+    aboutPersonId: text("about_person_id"),
+    pinned: boolean("pinned").notNull().default(false),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("posts_tree_created_idx").on(t.treeId, t.createdAt)],
+);
+
+export type Post = typeof posts.$inferSelect;
+
 export const editSuggestions = pgTable("edit_suggestions", {
   id: text("id").primaryKey(),
   personId: text("person_id").notNull(),

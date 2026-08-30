@@ -12,7 +12,7 @@ export function Nav({
   role: string;
 }) {
   const links: [string, string][] = [
-    ["/", "Home"],
+    ["/", "Feed"],
     ["/people", "People"],
     ["/relate", "Relate"],
     ["/tree", "Tree"],
