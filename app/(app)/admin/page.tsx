@@ -1,6 +1,6 @@
 import { and, asc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { invitations, treeMembers, users, people } from "@/db/schema";
+import { invitations, users, people } from "@/db/schema";
 import { requireMember, canEdit, isOwner, appUrl } from "@/lib/access";
 import { fullName } from "@/lib/names";
 import { importGramps, createInvitation, revokeInvitation, setMemberRole } from "./actions";
@@ -20,10 +20,9 @@ export default async function AdminPage({
   const [pending, members, everyone] = await Promise.all([
     db.select().from(invitations).where(and(eq(invitations.treeId, tree.id), isNull(invitations.acceptedAt))),
     db
-      .select({ userId: treeMembers.userId, role: treeMembers.role, email: users.email, name: users.name })
-      .from(treeMembers)
-      .innerJoin(users, eq(users.id, treeMembers.userId))
-      .where(eq(treeMembers.treeId, tree.id)),
+      .select({ userId: users.id, role: users.role, email: users.email, name: users.name })
+      .from(users)
+      .where(eq(users.treeId, tree.id)),
     db.select().from(people).where(eq(people.treeId, tree.id)).orderBy(asc(people.surname), asc(people.given)),
   ]);
 

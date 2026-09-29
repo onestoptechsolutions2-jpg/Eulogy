@@ -8,7 +8,7 @@ import type { ParsedGramps } from "./gramps";
  * Wipe and reload the three genealogy tables for one tree from parsed
  * Gramps data, in a single atomic transaction (raw neon client — the
  * drizzle neon-http driver has no transaction support). Family-entered
- * fields on people (birth/death/bio/photo/living/claim) are read first and
+ * fields on people (birth/death/bio/photo/living) are read first and
  * merged back so re-importing an updated export doesn't erase them.
  */
 export async function replaceGenealogy(treeId: string, parsed: ParsedGramps) {
@@ -20,7 +20,8 @@ export async function replaceGenealogy(treeId: string, parsed: ParsedGramps) {
   const queries = [
     sql`DELETE FROM family_children WHERE family_id IN (SELECT id FROM families WHERE tree_id = ${treeId})`,
     sql`DELETE FROM families WHERE tree_id = ${treeId}`,
-    sql`DELETE FROM people WHERE tree_id = ${treeId}`,
+    // people with a login are kept (and updated below if the file has them)
+    sql`DELETE FROM people WHERE tree_id = ${treeId} AND id NOT IN (SELECT person_id FROM users WHERE tree_id = ${treeId})`,
   ];
 
   for (const p of parsed.people) {
@@ -31,11 +32,16 @@ export async function replaceGenealogy(treeId: string, parsed: ParsedGramps) {
     queries.push(sql`
       INSERT INTO people
         (id, tree_id, gramps_id, given, surname, prefix, suffix, title, nick,
-         gender, birth_date, death_date, living, claimed_by_user_id, photo_url, bio, updated_at)
+         gender, birth_date, death_date, living, photo_url, bio, updated_at)
       VALUES
         (${p.handle}, ${treeId}, ${p.grampsId}, ${p.given}, ${p.surname}, ${p.prefix},
          ${p.suffix}, ${p.title}, ${p.nick}, ${p.gender}, ${birth}, ${death}, ${living},
-         ${kept?.claimedByUserId ?? null}, ${kept?.photoUrl ?? ""}, ${kept?.bio ?? ""}, now())`);
+         ${kept?.photoUrl ?? ""}, ${kept?.bio ?? ""}, now())
+      ON CONFLICT (id) DO UPDATE SET
+        gramps_id = EXCLUDED.gramps_id, given = EXCLUDED.given, surname = EXCLUDED.surname,
+        prefix = EXCLUDED.prefix, suffix = EXCLUDED.suffix, title = EXCLUDED.title,
+        nick = EXCLUDED.nick, gender = EXCLUDED.gender, birth_date = EXCLUDED.birth_date,
+        death_date = EXCLUDED.death_date, living = EXCLUDED.living, updated_at = now()`);
   }
 
   for (const f of parsed.families) {

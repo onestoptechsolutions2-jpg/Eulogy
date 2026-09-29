@@ -19,7 +19,7 @@ async function personFor(personId: string, needEditor = false) {
     .from(people)
     .where(and(eq(people.treeId, tree.id), eq(people.id, personId)));
   if (!person) redirect("/people");
-  const ok = needEditor ? canEdit(role) : canEditPerson(role, person, user.id);
+  const ok = needEditor ? canEdit(role) : canEditPerson(role, person, user);
   if (!ok) redirect(`/person/${personId}?error=forbidden`);
   return { tree, user, person };
 }

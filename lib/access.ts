@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { and, asc, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { auth } from "@/auth";
 import { db } from "@/db";
-import { users, trees, treeMembers } from "@/db/schema";
+import { users, trees } from "@/db/schema";
 
 export function appUrl() {
   return (process.env.APP_URL ?? "http://localhost:3000").replace(/\/$/, "");
@@ -21,31 +21,19 @@ export async function requireUser() {
   return u;
 }
 
-/** The one family tree — single-tree deployment. */
-export async function getPrimaryTree() {
-  const [t] = await db.select().from(trees).orderBy(asc(trees.createdAt)).limit(1);
-  return t ?? null;
-}
-
 export type Membership = {
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
-  tree: NonNullable<Awaited<ReturnType<typeof getPrimaryTree>>>;
+  tree: typeof trees.$inferSelect;
   role: string;
 };
 
+/** The signed-in user and their one family. users.tree_id is NOT NULL, so
+ *  the family always exists; the redirect is only a safety net. */
 export async function requireMember(): Promise<Membership> {
   const user = await requireUser();
-  const tree = await getPrimaryTree();
-  if (!tree) redirect("/setup");
-
-  const [m] = await db
-    .select()
-    .from(treeMembers)
-    .where(and(eq(treeMembers.treeId, tree.id), eq(treeMembers.userId, user.id)));
-
-  // provisionUser adds a membership on sign-in; this is a safety net
-  if (!m) redirect("/no-access");
-  return { user, tree, role: m.role };
+  const [tree] = await db.select().from(trees).where(eq(trees.id, user.treeId));
+  if (!tree) redirect("/no-access");
+  return { user, tree, role: user.role };
 }
 
 export function canEdit(role: string) {

@@ -29,7 +29,7 @@ export default async function EditPersonPage({
   const { tree, user, role } = await requireMember();
   const person = await getPerson(tree.id, id);
   if (!person) notFound();
-  if (!canEditPerson(role, person, user.id)) redirect(`/person/${id}`);
+  if (!canEditPerson(role, person, user)) redirect(`/person/${id}`);
 
   const isEditor = canEdit(role);
   const [evs, gallery] = await Promise.all([listEvents(id), listGallery(tree.id, id)]);

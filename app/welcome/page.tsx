@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/access";
-import { getClaimedPerson } from "@/lib/profile";
+import { getClaimedPerson, linkedPersonIds } from "@/lib/profile";
 import { loadGenealogy, searchPeople } from "@/lib/queries";
 import { db } from "@/db";
 import { people } from "@/db/schema";
 import { asc, eq } from "drizzle-orm";
 import { fullName, lifespan, shortName } from "@/lib/names";
 import type { Person } from "@/db/schema";
-import { addRelative, claimSelf, createSelfPerson, skipOnboarding } from "./actions";
+import { addRelative, claimSelf, finishOnboarding, saveSelf } from "./actions";
 
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
-type Step = "choice" | "find" | "add" | "family";
+type Step = "you" | "find" | "family";
 
 export default async function WelcomePage({
   searchParams,
@@ -22,55 +22,55 @@ export default async function WelcomePage({
 }) {
   const { tree, user } = await requireMember();
   const { step: rawStep, q, error } = await searchParams;
-  const step = (["find", "add", "family"].includes(rawStep ?? "") ? rawStep : "choice") as Step;
+  const step = (["find", "family"].includes(rawStep ?? "") ? rawStep : "you") as Step;
 
   const mine = await getClaimedPerson(tree.id, user.id);
+  if (!mine) redirect("/no-access");
 
-  // Already have a profile? The only screen left is "add family".
-  if (mine && step !== "family") redirect("/feed");
-  // Can't add family before there's a "you" to hang it off.
-  if (!mine && step === "family") redirect("/welcome?step=add");
+  // Already through onboarding? The only screen left worth showing is "add family".
+  if (user.onboardedAt && step !== "family") redirect("/feed");
 
   return (
     <main className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-5 py-16">
       <p className="label mb-3">Welcome to Mizizi</p>
 
-      {step === "choice" && <Choice />}
+      {step === "you" && <You treeId={tree.id} me={mine} error={error} />}
       {step === "find" && <Find treeId={tree.id} query={(q ?? "").trim()} error={error} />}
-      {step === "add" && <AddSelf error={error} />}
-      {step === "family" && mine && <AddFamily treeId={tree.id} me={mine} error={error} />}
+      {step === "family" && <AddFamily treeId={tree.id} me={mine} error={error} />}
     </main>
   );
 }
 
-function Choice() {
+async function You({ treeId, me, error }: { treeId: string; me: Person; error?: string }) {
+  const others = (await db.select({ id: people.id }).from(people).where(eq(people.treeId, treeId))).length > 1;
   return (
     <>
-      <h1 className="mb-2 text-3xl">Let&rsquo;s find you in the family</h1>
-      <p className="mb-8 text-[color:var(--ink-soft)]">
-        Every account is linked to one person in the tree. Which are you?
+      <h1 className="mb-2 text-3xl">Is this you?</h1>
+      <p className="mb-6 text-[color:var(--ink-soft)]">
+        Check your details. You can change anything, and fill in the rest later.
       </p>
 
-      <div className="flex flex-col gap-3">
-        <Link href="/welcome?step=find" className="card p-4 no-underline">
-          <span className="block font-serif text-lg">I&rsquo;m already in the tree</span>
-          <span className="block text-sm text-[color:var(--ink-soft)]">
-            Search for your name and claim your profile.
-          </span>
-        </Link>
-        <Link href="/welcome?step=add" className="card p-4 no-underline">
-          <span className="block font-serif text-lg">Add me to the tree</span>
-          <span className="block text-sm text-[color:var(--ink-soft)]">
-            Create your profile, then add your parents, partner and children.
-          </span>
-        </Link>
-      </div>
+      {error === "name" && (
+        <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
+          Enter at least a first or last name.
+        </p>
+      )}
 
-      <form action={skipOnboarding} className="mt-8">
-        <button type="submit" className="text-sm text-[color:var(--ink-soft)] underline">
-          Skip for now
-        </button>
+      <form action={saveSelf} className="flex flex-col gap-3">
+        <PersonFields
+          givenDefault={me.given}
+          surnameDefault={me.surname}
+          birthYearDefault={me.birthDate}
+          genderDefault={me.gender === "U" ? "" : me.gender}
+        />
+        <button type="submit" className="btn mt-1 self-start">Continue</button>
       </form>
+
+      {others && (
+        <p className="mt-6 text-sm text-[color:var(--ink-soft)]">
+          Already in the tree under another entry? <Link href="/welcome?step=find">Find yourself</Link>.
+        </p>
+      )}
     </>
   );
 }
@@ -84,6 +84,7 @@ async function Find({
   query: string;
   error?: string;
 }) {
+  const linked = await linkedPersonIds(treeId);
   const results = query
     ? await searchPeople(treeId, query, 40)
     : await db
@@ -96,12 +97,17 @@ async function Find({
     <>
       <h1 className="mb-2 text-3xl">Which one are you?</h1>
       <p className="mb-6 text-[color:var(--ink-soft)]">
-        Find yourself and claim your profile — you can edit it afterwards.
+        Find yourself and link your account to that entry — you can edit it afterwards.
       </p>
 
       {error === "taken" && (
         <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
           Someone has already claimed that profile. If that&rsquo;s a mistake, ask the tree owner.
+        </p>
+      )}
+      {error === "filled" && (
+        <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
+          Your own entry already has details, so it can&rsquo;t be swapped. Ask the tree owner to merge them.
         </p>
       )}
       {error === "notfound" && (
@@ -131,9 +137,9 @@ async function Find({
             <span>
               {fullName(p)}
               {lifespan(p) && <span className="label ml-2">({lifespan(p)})</span>}
-              {p.claimedByUserId && <span className="label ml-2">· claimed</span>}
+              {linked.has(p.id) && <span className="label ml-2">· claimed</span>}
             </span>
-            {!p.claimedByUserId && (
+            {!linked.has(p.id) && (
               <form action={claimSelf}>
                 <input type="hidden" name="personId" value={p.id} />
                 <button className="btn ghost" type="submit">This is me</button>
@@ -147,34 +153,6 @@ async function Find({
           </li>
         )}
       </ul>
-
-      <p className="mt-6 text-sm">
-        <Link href="/welcome">← Back</Link>
-        <span className="mx-2 text-[color:var(--ink-soft)]">·</span>
-        Not in the tree? <Link href="/welcome?step=add">Add yourself</Link>.
-      </p>
-    </>
-  );
-}
-
-function AddSelf({ error }: { error?: string }) {
-  return (
-    <>
-      <h1 className="mb-2 text-3xl">Add yourself</h1>
-      <p className="mb-6 text-[color:var(--ink-soft)]">
-        Just the basics — you can fill in the rest later.
-      </p>
-
-      {error === "name" && (
-        <p className="card mb-4 p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
-          Enter at least a first or last name.
-        </p>
-      )}
-
-      <form action={createSelfPerson} className="flex flex-col gap-3">
-        <PersonFields />
-        <button type="submit" className="btn mt-1 self-start">Continue</button>
-      </form>
 
       <p className="mt-6 text-sm">
         <Link href="/welcome">← Back</Link>
@@ -249,23 +227,33 @@ async function AddFamily({
         <button type="submit" className="btn ghost self-start">Add relative</button>
       </form>
 
-      <div className="mt-8 flex items-center gap-4">
-        <Link href="/feed" className="btn">Done</Link>
-        <Link href="/feed" className="text-sm text-[color:var(--ink-soft)]">
+      <form action={finishOnboarding} className="mt-8 flex items-center gap-4">
+        <button type="submit" className="btn">Done</button>
+        <button type="submit" className="text-sm text-[color:var(--ink-soft)] underline">
           I&rsquo;ll do this later
-        </Link>
-      </div>
+        </button>
+      </form>
     </>
   );
 }
 
-function PersonFields({ surnameDefault = "" }: { surnameDefault?: string }) {
+function PersonFields({
+  givenDefault = "",
+  surnameDefault = "",
+  birthYearDefault = "",
+  genderDefault = "",
+}: {
+  givenDefault?: string;
+  surnameDefault?: string;
+  birthYearDefault?: string;
+  genderDefault?: string;
+}) {
   return (
     <>
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="label">First name</span>
-          <input name="given" className="field" autoComplete="off" />
+          <input name="given" defaultValue={givenDefault} className="field" autoComplete="off" />
         </label>
         <label className="flex flex-col gap-1">
           <span className="label">Last name</span>
@@ -275,11 +263,11 @@ function PersonFields({ surnameDefault = "" }: { surnameDefault?: string }) {
       <div className="grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="label">Birth year (optional)</span>
-          <input name="birthYear" className="field" inputMode="numeric" placeholder="e.g. 1975" />
+          <input name="birthYear" defaultValue={birthYearDefault} className="field" inputMode="numeric" placeholder="e.g. 1975" />
         </label>
         <label className="flex flex-col gap-1">
           <span className="label">Gender (optional)</span>
-          <select name="gender" defaultValue="" className="field">
+          <select name="gender" defaultValue={genderDefault} className="field">
             <option value="">Prefer not to say</option>
             <option value="F">Female</option>
             <option value="M">Male</option>

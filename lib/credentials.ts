@@ -1,8 +1,9 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { users, passwordResetTokens } from "@/db/schema";
-import { newId, newToken } from "./ids";
+import { newToken } from "./ids";
 import { hashPassword } from "./password";
+import { createUserWithFamily } from "./provision";
 
 export async function emailTaken(email: string): Promise<boolean> {
   const [u] = await db.select().from(users).where(eq(users.email, email.toLowerCase()));
@@ -15,16 +16,11 @@ export async function createPasswordUser(opts: {
   password: string;
 }) {
   const email = opts.email.toLowerCase();
-  const [u] = await db
-    .insert(users)
-    .values({
-      id: newId(),
-      email,
-      name: opts.name || email.split("@")[0],
-      passwordHash: await hashPassword(opts.password),
-    })
-    .returning();
-  return u;
+  return createUserWithFamily({
+    email,
+    name: opts.name || email.split("@")[0],
+    passwordHash: await hashPassword(opts.password),
+  });
 }
 
 export async function setUserPassword(userId: string, password: string) {

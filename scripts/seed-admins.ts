@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
-import { and, asc, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import * as schema from "../db/schema.ts";
 import { newId } from "../lib/ids.ts";
 import { hashPassword, generatePassword } from "../lib/password.ts";
@@ -11,7 +11,7 @@ import { hashPassword, generatePassword } from "../lib/password.ts";
 //   npm run seed:admins -- --role owner --password "Shared-Pass-1" a@x.com b@x.com
 //
 // Creates (or updates) a password account for each address and makes it a
-// member of the family tree with the given role. Prints the credentials.
+// member of the (oldest) family tree with the given role, leaving anyone who already belongs to another family where they are. Prints the credentials.
 
 const args = process.argv.slice(2);
 let role = "editor";
@@ -51,27 +51,20 @@ for (const email of emails) {
   let [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
   let status: string;
   if (user) {
-    await db.update(schema.users).set({ passwordHash }).where(eq(schema.users.id, user.id));
-    status = "updated";
+    // A user's family and person are fixed; only the password and role change.
+    await db
+      .update(schema.users)
+      .set({ passwordHash, ...(user.treeId === tree.id ? { role } : {}) })
+      .where(eq(schema.users.id, user.id));
+    status = user.treeId === tree.id ? "updated" : "updated (belongs to another family; role unchanged)";
   } else {
+    const personId = newId();
+    await db.insert(schema.people).values({ id: personId, treeId: tree.id, given: email.split("@")[0] });
     [user] = await db
       .insert(schema.users)
-      .values({ id: newId(), email, name: email.split("@")[0], passwordHash })
+      .values({ id: newId(), email, name: email.split("@")[0], passwordHash, treeId: tree.id, role, personId })
       .returning();
     status = "created";
-  }
-
-  const [m] = await db
-    .select()
-    .from(schema.treeMembers)
-    .where(and(eq(schema.treeMembers.treeId, tree.id), eq(schema.treeMembers.userId, user.id)));
-  if (m) {
-    await db
-      .update(schema.treeMembers)
-      .set({ role })
-      .where(and(eq(schema.treeMembers.treeId, tree.id), eq(schema.treeMembers.userId, user.id)));
-  } else {
-    await db.insert(schema.treeMembers).values({ treeId: tree.id, userId: user.id, role });
   }
 
   out.push({ email, password, role, status });

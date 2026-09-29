@@ -64,7 +64,11 @@ export default async function AdminTreePage({
       )}
       {error && (
         <p className="card p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
-          {error === "forbidden" ? "You don't have permission." : "Enter at least a first or last name."}
+          {error === "forbidden"
+            ? "You don't have permission."
+            : error === "has-account"
+              ? "That person has a login. Remove or change the account before deleting them."
+              : "Enter at least a first or last name."}
         </p>
       )}
 

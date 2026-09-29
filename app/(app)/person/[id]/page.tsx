@@ -3,13 +3,13 @@ import { notFound } from "next/navigation";
 import { requireMember } from "@/lib/access";
 import { graphFor, getPerson } from "@/lib/queries";
 import { relativesOf } from "@/lib/relatives";
-import { canEditPerson, getClaimedPerson } from "@/lib/profile";
+import { canEditPerson, getClaimedPerson, isPlaceholder, linkedPersonIds } from "@/lib/profile";
 import { fullName, lifespan } from "@/lib/names";
 import { buildTimeline, listEvents } from "@/lib/events";
 import { listGallery } from "@/lib/media";
 import { getEulogyByPerson } from "@/lib/eulogy";
 import { KinList } from "@/components/people";
-import { claimPerson, unclaimPerson } from "../../claim/actions";
+import { claimPerson } from "../../claim/actions";
 import type { Person } from "@/db/schema";
 
 export default async function PersonPage({
@@ -26,12 +26,13 @@ export default async function PersonPage({
   const person = await getPerson(tree.id, id);
   if (!person) notFound();
 
-  const [{ graph, people }, evs, gallery, eulogy, mineElsewhere] = await Promise.all([
+  const [{ graph, people }, evs, gallery, eulogy, myPerson, linked] = await Promise.all([
     graphFor(tree.id),
     listEvents(id),
     listGallery(tree.id, id),
     getEulogyByPerson(tree.id, id),
     getClaimedPerson(tree.id, user.id),
+    linkedPersonIds(tree.id),
   ]);
 
   const byId = new Map(people.map((p) => [p.id, p]));
@@ -40,8 +41,10 @@ export default async function PersonPage({
     ids.map((h) => byId.get(h)).filter((p): p is Person => !!p);
 
   const timeline = buildTimeline(person, evs);
-  const isMine = person.claimedByUserId === user.id;
-  const canEdit = canEditPerson(role, person, user.id);
+  const isMine = person.id === user.personId;
+  const isLinked = linked.has(person.id);
+  const canClaim = !isLinked && !!myPerson && (await isPlaceholder(tree.id, myPerson));
+  const canEdit = canEditPerson(role, person, user);
 
   return (
     <article className="flex flex-col gap-8">
@@ -86,7 +89,7 @@ export default async function PersonPage({
             <p className="label mt-1">
               {person.nick && <span>“{person.nick}” · </span>}
               {lifespan(person) || (person.living ? "living" : "dates unknown")}
-              {person.claimedByUserId && <span> · {isMine ? "your profile" : "claimed"}</span>}
+              {isLinked && <span> · {isMine ? "your profile" : "has an account"}</span>}
             </p>
           </div>
         </div>
@@ -96,16 +99,10 @@ export default async function PersonPage({
               Edit profile
             </Link>
           )}
-          {!person.claimedByUserId && !mineElsewhere && (
+          {canClaim && (
             <form action={claimPerson}>
               <input type="hidden" name="personId" value={person.id} />
               <button type="submit" className="btn">This is me</button>
-            </form>
-          )}
-          {isMine && (
-            <form action={unclaimPerson}>
-              <input type="hidden" name="personId" value={person.id} />
-              <button type="submit" className="btn ghost">Not me</button>
             </form>
           )}
         </div>

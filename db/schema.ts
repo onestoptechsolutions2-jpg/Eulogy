@@ -6,18 +6,32 @@ import {
   boolean,
   primaryKey,
   index,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // --- accounts & access -------------------------------------------------
 
-export const users = pgTable("users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  name: text("name").notNull().default(""),
-  image: text("image").notNull().default(""),
-  passwordHash: text("password_hash").notNull().default(""), // scrypt$salt$hash, "" = OAuth-only
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-});
+// Every user belongs to exactly one family (a row in `trees`), holds a role
+// in it, and is exactly one person. tree_id and person_id are NOT NULL, so a
+// user without a family or a person cannot exist.
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull().unique(),
+    name: text("name").notNull().default(""),
+    image: text("image").notNull().default(""),
+    passwordHash: text("password_hash").notNull().default(""), // scrypt$salt$hash, "" = OAuth-only
+    treeId: text("tree_id").notNull().references((): AnyPgColumn => trees.id),
+    role: text("role").notNull().default("contributor"), // owner | editor | contributor | viewer
+    // The person this account is. NOT NULL + UNIQUE; the DB also enforces
+    // (tree_id, person_id) -> people(tree_id, id) so it is in the user's family.
+    personId: text("person_id").notNull().unique(),
+    onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index("users_tree_idx").on(t.treeId)],
+);
 
 export const passwordResetTokens = pgTable("password_reset_tokens", {
   token: text("token").primaryKey(),
@@ -29,11 +43,14 @@ export const passwordResetTokens = pgTable("password_reset_tokens", {
 export const trees = pgTable("trees", {
   id: text("id").primaryKey(),
   name: text("name").notNull(),
-  ownerId: text("owner_id").notNull().references(() => users.id),
+  // Legacy. Ownership now lives in users.role; nullable so a family can be
+  // created before its first user (users.tree_id needs the family to exist).
+  ownerId: text("owner_id").references((): AnyPgColumn => users.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
-// role: owner | editor | contributor | viewer
+// Deprecated: superseded by users.tree_id + users.role. Kept for one release
+// as a rollback safety net; nothing reads or writes it. Drop in a later migration.
 export const treeMembers = pgTable(
   "tree_members",
   {
@@ -84,7 +101,6 @@ export const people = pgTable(
     birthDate: text("birth_date").notNull().default(""),
     deathDate: text("death_date").notNull().default(""),
     living: boolean("living").notNull().default(true),
-    claimedByUserId: text("claimed_by_user_id").references(() => users.id, { onDelete: "set null" }),
     photoUrl: text("photo_url").notNull().default(""),
     coverUrl: text("cover_url").notNull().default(""),
     bio: text("bio").notNull().default(""),

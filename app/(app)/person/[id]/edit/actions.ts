@@ -19,7 +19,7 @@ export async function updatePerson(formData: FormData) {
     .from(people)
     .where(and(eq(people.treeId, tree.id), eq(people.id, id)));
   if (!person) redirect("/people");
-  if (!canEditPerson(role, person, user.id)) redirect(`/person/${id}?error=forbidden`);
+  if (!canEditPerson(role, person, user)) redirect(`/person/${id}?error=forbidden`);
 
   const genderRaw = s(formData.get("gender"), 1).toUpperCase();
   const deathDate = s(formData.get("deathDate"), 40);

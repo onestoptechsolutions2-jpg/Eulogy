@@ -12,3 +12,6 @@ _prototype/node_modules/
 
 # build artifacts
 tsconfig.tsbuildinfo
+
+# database backups (personal data, password hashes)
+backups/

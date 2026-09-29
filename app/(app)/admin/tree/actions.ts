@@ -12,6 +12,7 @@ import {
   deleteFamily,
   deletePerson,
 } from "@/lib/genealogy-edit";
+import { personHasAccount } from "@/lib/profile";
 
 async function guard() {
   const m = await requireMember();
@@ -80,6 +81,8 @@ export async function deleteFamilyAction(formData: FormData) {
 
 export async function deletePersonAction(formData: FormData) {
   const { tree } = await guard();
-  await deletePerson(tree.id, String(formData.get("personId") ?? ""));
+  const personId = String(formData.get("personId") ?? "");
+  if (await personHasAccount(personId)) redirect("/admin/tree?error=has-account");
+  await deletePerson(tree.id, personId);
   done("person-deleted");
 }

@@ -16,25 +16,23 @@ if (!process.env.DATABASE_URL || !email) {
 
 const db = drizzle(neon(process.env.DATABASE_URL), { schema });
 
-let [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
-if (!user) {
-  [user] = await db
-    .insert(schema.users)
-    .values({ id: newId(), email, name: "Owner" })
-    .returning();
-}
-
 let [tree] = await db.select().from(schema.trees).orderBy(asc(schema.trees.createdAt)).limit(1);
 if (!tree) {
-  [tree] = await db
-    .insert(schema.trees)
-    .values({ id: newId(), name: "Family Tree", ownerId: user.id })
-    .returning();
+  [tree] = await db.insert(schema.trees).values({ id: newId(), name: "Family Tree" }).returning();
 }
-await db
-  .insert(schema.treeMembers)
-  .values({ treeId: tree.id, userId: user.id, role: "owner" })
-  .onConflictDoNothing();
+
+let [user] = await db.select().from(schema.users).where(eq(schema.users.email, email));
+if (!user) {
+  const personId = newId();
+  await db.insert(schema.people).values({ id: personId, treeId: tree.id, given: "Owner" });
+  [user] = await db
+    .insert(schema.users)
+    .values({ id: newId(), email, name: "Owner", treeId: tree.id, role: "owner", personId })
+    .returning();
+} else {
+  await db.update(schema.users).set({ role: "owner" }).where(eq(schema.users.id, user.id));
+}
+await db.update(schema.trees).set({ ownerId: user.id }).where(eq(schema.trees.id, tree.id));
 
 const file = process.argv[2];
 if (file) {

@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { requireMember } from "@/lib/access";
-import { getClaimedPerson } from "@/lib/profile";
+import { linkedPersonIds } from "@/lib/profile";
 import { searchPeople } from "@/lib/queries";
 import { db } from "@/db";
 import { people } from "@/db/schema";
@@ -14,10 +13,8 @@ export default async function ClaimPage({
 }: {
   searchParams: Promise<{ q?: string; error?: string }>;
 }) {
-  const { tree, user } = await requireMember();
-  const mine = await getClaimedPerson(tree.id, user.id);
-  if (mine) redirect(`/person/${mine.id}`);
-
+  const { tree } = await requireMember();
+  const linked = await linkedPersonIds(tree.id);
   const { q, error } = await searchParams;
   const query = (q ?? "").trim();
   const results = query
@@ -44,6 +41,12 @@ export default async function ClaimPage({
         </p>
       )}
 
+      {error === "filled" && (
+        <p className="card p-3 text-sm" style={{ borderLeft: "3px solid var(--earth)" }}>
+          Your own entry already has details, so it can&rsquo;t be swapped. Ask the tree owner to merge them.
+        </p>
+      )}
+
       <form action="/claim" className="flex gap-2">
         <input name="q" defaultValue={query} className="field" placeholder="Type your name…" aria-label="Search" />
         <button className="btn" type="submit">Search</button>
@@ -58,9 +61,9 @@ export default async function ClaimPage({
             <span>
               <Link href={`/person/${p.id}`}>{fullName(p)}</Link>
               {lifespan(p) && <span className="label ml-2">({lifespan(p)})</span>}
-              {p.claimedByUserId && <span className="label ml-2">· claimed</span>}
+              {linked.has(p.id) && <span className="label ml-2">· claimed</span>}
             </span>
-            {!p.claimedByUserId && (
+            {!linked.has(p.id) && (
               <form action={claimPerson}>
                 <input type="hidden" name="personId" value={p.id} />
                 <button className="btn ghost" type="submit">This is me</button>

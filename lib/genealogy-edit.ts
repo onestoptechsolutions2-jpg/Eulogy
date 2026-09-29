@@ -1,6 +1,7 @@
 import { and, eq, sql as dsql } from "drizzle-orm";
 import { db } from "@/db";
 import { people, families, familyChildren } from "@/db/schema";
+import { personHasAccount } from "./profile";
 import { newId } from "./ids";
 
 // All parent/child relationships go THROUGH a family (union) record — the
@@ -109,6 +110,7 @@ export async function deleteFamily(treeId: string, familyId: string) {
  * partner slots that pointed at them, then delete empty families.
  */
 export async function deletePerson(treeId: string, personId: string) {
+  if (await personHasAccount(personId)) throw new Error("person-has-account");
   await db.delete(familyChildren).where(eq(familyChildren.childId, personId));
   await db
     .update(families)

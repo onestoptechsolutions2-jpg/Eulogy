@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { invitations, treeMembers } from "@/db/schema";
+import { invitations, users } from "@/db/schema";
 import { requireMember, canEdit, isOwner } from "@/lib/access";
 import { parseGramps } from "@/lib/gramps";
 import { replaceGenealogy } from "@/lib/import";
@@ -78,15 +78,15 @@ export async function setMemberRole(formData: FormData) {
   if (newRole !== "owner") {
     const owners = await db
       .select()
-      .from(treeMembers)
-      .where(and(eq(treeMembers.treeId, tree.id), eq(treeMembers.role, "owner")));
-    if (owners.length <= 1 && owners[0]?.userId === userId) redirect("/admin?error=lastowner");
+      .from(users)
+      .where(and(eq(users.treeId, tree.id), eq(users.role, "owner")));
+    if (owners.length <= 1 && owners[0]?.id === userId) redirect("/admin?error=lastowner");
   }
 
   await db
-    .update(treeMembers)
+    .update(users)
     .set({ role: newRole })
-    .where(and(eq(treeMembers.treeId, tree.id), eq(treeMembers.userId, userId)));
+    .where(and(eq(users.treeId, tree.id), eq(users.id, userId)));
   revalidatePath("/admin");
   redirect("/admin");
 }

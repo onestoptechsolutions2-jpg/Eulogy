@@ -16,7 +16,7 @@ async function editablePerson(personId: string) {
     .from(people)
     .where(and(eq(people.treeId, tree.id), eq(people.id, personId)));
   if (!person) redirect("/people");
-  if (!canEditPerson(role, person, user.id)) redirect(`/person/${personId}?error=forbidden`);
+  if (!canEditPerson(role, person, user)) redirect(`/person/${personId}?error=forbidden`);
   return { tree, user, person };
 }
 
